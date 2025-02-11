@@ -75,3 +75,23 @@ func (c *CustomerPoHandler) FetchCustomerPoData(w http.ResponseWriter, r *http.R
 	w.WriteHeader(http.StatusOK)
 	utils.Encode(w, customerPoList)
 }
+
+func (c *CustomerPoHandler) UpdateCustomerPoData(w http.ResponseWriter, r *http.Request) {
+	var data models.CustomerPo
+	err := utils.Decode(r, &data)
+	if err != nil {
+		log.Printf("Failed to decode request body: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		utils.Encode(w, map[string]string{"message": "Invalid request body"})
+		return
+	}
+	err = c.customerRepo.UpdateCustomerPoData(data)
+	if err != nil {
+		log.Printf("Failed to update customer PO data: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		utils.Encode(w, map[string]string{"message": "Failed to update data"})
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	utils.Encode(w, map[string]string{"message": "Data updated successfully"})
+}

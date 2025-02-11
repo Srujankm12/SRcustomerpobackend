@@ -35,21 +35,22 @@ func (q *Query) CreateTables() error {
 
 	queries := []string{
 		`CREATE TABLE IF NOT EXISTS customername (
-			customer_name VARCHAR(255) PRIMARY KEY
+			customer_name VARCHAR(255) NOT NULL UNIQUE
 		)`,
 		`CREATE TABLE IF NOT EXISTS bsno (
-			bs_number VARCHAR(50) PRIMARY KEY
+			bs_number VARCHAR(50) NOT NULL UNIQUE
 		)`,
 		`CREATE TABLE IF NOT EXISTS unit (	
-			unit_name VARCHAR(100) PRIMARY KEY
+			unit_name VARCHAR(100) NOT NULL UNIQUE
 		)`,
 		`CREATE TABLE IF NOT EXISTS postatusdd (
-			status VARCHAR(100) PRIMARY KEY
+			status VARCHAR(100) NOT NULL UNIQUE
 		)`,
 		`CREATE TABLE IF NOT EXISTS concernsonorder (
-			concern VARCHAR(100) PRIMARY KEY
+			concern VARCHAR(100) NOT NULL UNIQUE
 		)`,
 		`CREATE TABLE IF NOT EXISTS customerposubmitteddata (
+			id SERIAL PRIMARY KEY,
 			timestamp VARCHAR(50) NOT NULL,
 			sra_engineer_name VARCHAR(255),
 			supplier VARCHAR(255),
@@ -60,12 +61,12 @@ func (q *Query) CreateTables() error {
 			part_code VARCHAR(100),
 			qty INT,
 			unit VARCHAR(100),
-			total_value INT,
+			total_value FLOAT, 
 			po_status_dd VARCHAR(100),
 			concerns_on_order VARCHAR(255),
-			billable_sch_value INT,
+			billable_sch_value FLOAT, 
 			deli_sch_as_per_customer_po VARCHAR(255),
-			customer_clearence_for_billing VARCHAR(255),
+			customer_clearence_for_billing INT, 
 			reserved_qty_from_stock INT,
 			required_qty_to_order INT,
 			pending_qty_against_po INT,
@@ -73,13 +74,13 @@ func (q *Query) CreateTables() error {
 			so_number VARCHAR(100),
 			mei_po_no VARCHAR(100),
 			po_status_f VARCHAR(100),
-			pending_value_against_po INT,
-			pending_order_value INT,
-			reserved_qty_stock_value INT,
+			pending_value_against_po FLOAT, 
+			pending_order_value FLOAT,
+			reserved_qty_stock_value FLOAT,
 			month_of_delivery_scheduled VARCHAR(50),
-			category VARCHAR(100),
-			PRIMARY KEY (customer_po_no)
-		)`,
+			category VARCHAR(100)
+);
+`,
 	}
 
 	for _, query := range queries {
@@ -99,7 +100,6 @@ func (q *Query) CreateTables() error {
 func (q *Query) FetchDropDown(limit, offset int) ([]models.CustomerPoDropDown, error) {
 	var customerList []models.CustomerPoDropDown
 
-	// 🚀 FIXED: Removed `CROSS JOIN` and added LIMIT + OFFSET for pagination
 	query := `SELECT c.customer_name, b.bs_number, u.unit_name, s.status, o.concern
 			  FROM customername c
 			  JOIN bsno b ON TRUE
@@ -242,11 +242,121 @@ func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 	return nil
 }
 
+func (q *Query) UpdateCustomerPoData(data models.CustomerPo) error {
+	customerClearance, err := strconv.Atoi(data.CustomerClearanceForBilling)
+	if err != nil {
+		log.Printf("Invalid customer_clearence_for_billing value: %v", err)
+		return err
+	}
+
+	// Initialize computed values
+	var billableSchValue, pendingValueAgainstPO, pendingOrderValue, reservedQtyStockValue float64
+	var requiredQtyToOrder, pendingQtyAgainstPO, materialDueQty int
+	var poStatus string
+
+	if data.Quantity > 0 {
+		unitPrice := float64(data.TotalValue) / float64(data.Quantity) // Calculate unit price safely
+		billableSchValue = unitPrice * float64(customerClearance)
+		requiredQtyToOrder = data.Quantity - customerClearance - data.ReservedQtyFromStock
+		pendingQtyAgainstPO = data.Quantity - customerClearance
+		materialDueQty = data.Quantity - customerClearance - data.ReservedQtyFromStock
+		pendingValueAgainstPO = float64(data.TotalValue) - billableSchValue
+		pendingOrderValue = unitPrice * float64(requiredQtyToOrder)
+		reservedQtyStockValue = unitPrice * float64(data.ReservedQtyFromStock)
+
+		if pendingQtyAgainstPO == 0 {
+			poStatus = "Completed"
+		} else {
+			poStatus = "Pending"
+		}
+	} else {
+		// Handle zero quantity case safely
+		billableSchValue = 0
+		requiredQtyToOrder = 0
+		pendingQtyAgainstPO = 0
+		materialDueQty = 0
+		pendingValueAgainstPO = 0
+		pendingOrderValue = 0
+		reservedQtyStockValue = 0
+		poStatus = "Pending"
+	}
+
+	_, err = q.db.Exec(`
+		UPDATE customerposubmitteddata SET
+			timestamp = $1,
+			sra_engineer_name = $2,
+			supplier = $3,
+			customer_name = $4,
+			bs_number = $5,
+			customer_po_no = $6,
+			po_date = $7,
+			part_code = $8,
+			qty = $9,
+			unit = $10,
+			total_value = $11,
+			po_status_dd = $12,
+			concerns_on_order = $13,
+			billable_sch_value = $14,
+			deli_sch_as_per_customer_po = $15,
+			customer_clearence_for_billing = $16,
+			reserved_qty_from_stock = $17,
+			required_qty_to_order = $18,
+			pending_qty_against_po = $19,
+			material_due_qty = $20,
+			so_number = $21,
+			mei_po_no = $22,
+			po_status_f = $23,
+			pending_value_against_po = $24,
+			pending_order_value = $25,
+			reserved_qty_stock_value = $26,
+			month_of_delivery_scheduled = $27,
+			category = $28
+		WHERE id = $29`, // Ensure update is based on ID
+		data.Timestamp,
+		data.SRAEngineerName,
+		data.Supplier,
+		data.CustomerName,
+		data.BSNO,
+		data.CustomerPoNo,
+		data.PODate,
+		data.PartCode,
+		data.Quantity,
+		data.Unit,
+		data.TotalValue,
+		poStatus, // Computed PO Status
+		data.ConcernsOnOrder,
+		billableSchValue, // Computed Billable Sch Value
+		data.DeliSchAsPerCustomerPo,
+		customerClearance, // Converted clearance
+		data.ReservedQtyFromStock,
+		requiredQtyToOrder,  // Computed Required Qty to Order
+		pendingQtyAgainstPO, // Computed Pending Qty Against PO
+		materialDueQty,      // Computed Material Due Qty
+		data.SONumber,
+		data.MEIPONO,
+		data.POStatusF,
+		pendingValueAgainstPO, // Computed Pending Value Against PO
+		pendingOrderValue,     // Computed Pending Order Value
+		reservedQtyStockValue, // Computed Reserved Qty Stock Value
+		data.MonthOfDeliveryScheduled,
+		data.Category,
+		data.ID, // The ID to update
+	)
+
+	if err != nil {
+		log.Printf("Failed to update data for ID %d: %v", data.ID, err)
+		return err
+	}
+
+	log.Printf("Customer PO data updated successfully for ID %d.", data.ID)
+	return nil
+}
+
 func (q *Query) FetchCustomerPoData() ([]models.CustomerPo, error) {
 	var customerPoList []models.CustomerPo
 
 	query := `
-		SELECT timestamp, sra_engineer_name, supplier, customer_name, bs_number, 
+		SELECT id, timestamp, sra_engineer_name, supplier, customer_name, bs_number, 
 		       customer_po_no, po_date, part_code, qty, unit, total_value, 
 		       po_status_dd, concerns_on_order, billable_sch_value, 
 		       deli_sch_as_per_customer_po, customer_clearence_for_billing, 
@@ -267,6 +377,7 @@ func (q *Query) FetchCustomerPoData() ([]models.CustomerPo, error) {
 	for rows.Next() {
 		var customerPo models.CustomerPo
 		err := rows.Scan(
+			&customerPo.ID,
 			&customerPo.Timestamp,
 			&customerPo.SRAEngineerName,
 			&customerPo.Supplier,
@@ -310,7 +421,7 @@ func (q *Query) FetchCustomerPoData() ([]models.CustomerPo, error) {
 
 	if len(customerPoList) == 0 {
 		log.Println("No records found in customerposubmitteddata")
-		return nil, nil // No error, just an empty result
+		return nil, nil
 	}
 
 	log.Printf("Fetched %d records from customerposubmitteddata", len(customerPoList))

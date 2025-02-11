@@ -52,3 +52,13 @@ func (c *CustomerPoRepository) FetchCustomerPoData(r *http.Request) ([]models.Cu
 	}
 	return res, nil
 }
+
+func (c *CustomerPoRepository) UpdateCustomerPoData(data models.CustomerPo) error {
+	query := database.NewQuery(c.db)
+	err := query.UpdateCustomerPoData(data)
+	if err != nil {
+		log.Printf("Failed to update customer PO data: %v", err)
+		return err
+	}
+	return nil
+}
