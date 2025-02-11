@@ -1,6 +1,9 @@
 package models
 
+import "net/http"
+
 type CustomerPo struct {
+	Timestamp                    string `json:"timestamp"`
 	SRAEngineerName              string `json:"sra_engineer_name"`
 	Supplier                     string `json:"supplier"`
 	CustomerName                 string `json:"customer_name"`
@@ -32,8 +35,13 @@ type CustomerPo struct {
 type CustomerPoDropDown struct {
 	CustomerName    string `json:"customer_name"`
 	BSNO            string `json:"bsno"`
-	PartCode        string `json:"part_code"`
 	Unit            string `json:"unit"`
 	POStatusDD      string `json:"po_status_dd"`
 	ConcernsOnOrder string `json:"concerns_on_order"`
+}
+
+type CustomerPoInterface interface {
+	FetchDropDown() ([]CustomerPoDropDown, error)
+	SubmitFormCustomerPoData(customerPo CustomerPo) error
+	FetchCustomerPoData(r *http.Request) ([]CustomerPo, error)
 }
