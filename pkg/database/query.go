@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/Srujankm12/CustomerPoBackend/internal/models"
@@ -130,9 +131,48 @@ func (q *Query) FetchDropDown(limit, offset int) ([]models.CustomerPoDropDown, e
 	log.Printf("Fetched %d dropdown records", len(customerList))
 	return customerList, nil
 }
-
 func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
-	_, err := q.db.Exec(`
+	// Convert customer clearance to an integer
+	customerClearance, err := strconv.Atoi(data.CustomerClearanceForBilling)
+	if err != nil {
+		log.Printf("Invalid customer_clearence_for_billing value: %v", err)
+		return err
+	}
+
+	// Initialize computed values
+	var billableSchValue, pendingValueAgainstPO, pendingOrderValue, reservedQtyStockValue float64
+	var requiredQtyToOrder, pendingQtyAgainstPO, materialDueQty int
+	var poStatus string
+
+	if data.Quantity > 0 {
+		unitPrice := float64(data.TotalValue) / float64(data.Quantity) // Calculate unit price safely
+		billableSchValue = unitPrice * float64(customerClearance)
+		requiredQtyToOrder = data.Quantity - customerClearance - data.ReservedQtyFromStock
+		pendingQtyAgainstPO = data.Quantity - customerClearance
+		materialDueQty = data.Quantity - customerClearance - data.ReservedQtyFromStock
+		pendingValueAgainstPO = float64(data.TotalValue) - billableSchValue
+		pendingOrderValue = unitPrice * float64(requiredQtyToOrder)
+		reservedQtyStockValue = unitPrice * float64(data.ReservedQtyFromStock)
+
+		if pendingQtyAgainstPO == 0 {
+			poStatus = "Completed"
+		} else {
+			poStatus = "Pending"
+		}
+	} else {
+		// Handle zero quantity case safely
+		billableSchValue = 0
+		requiredQtyToOrder = 0
+		pendingQtyAgainstPO = 0
+		materialDueQty = 0
+		pendingValueAgainstPO = 0
+		pendingOrderValue = 0
+		reservedQtyStockValue = 0
+		poStatus = "Pending"
+	}
+
+	// Insert into the database
+	_, err = q.db.Exec(`
 		INSERT INTO customerposubmitteddata (
 			timestamp,
 			sra_engineer_name,
@@ -174,21 +214,21 @@ func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 		data.Quantity,
 		data.Unit,
 		data.TotalValue,
-		data.POStatusDD,
+		poStatus, // Computed PO Status
 		data.ConcernsOnOrder,
-		data.BillableSchValue,
+		billableSchValue, // Computed Billable Sch Value
 		data.DeliSchAsPerCustomerPo,
-		data.CustomerClearenceForBillingg,
+		customerClearance, // Converted clearance
 		data.ReservedQtyFromStock,
-		data.RequiredQtyToOrder,
-		data.PendingQtyAgainstPO,
-		data.MaterialDueQty,
+		requiredQtyToOrder,  // Computed Required Qty to Order
+		pendingQtyAgainstPO, // Computed Pending Qty Against PO
+		materialDueQty,      // Computed Material Due Qty
 		data.SONumber,
 		data.MEIPONO,
 		data.POStatusF,
-		data.PendingValueAgainstPO,
-		data.PendingOrderValue,
-		data.ReservedQtyStockValue,
+		pendingValueAgainstPO, // Computed Pending Value Against PO
+		pendingOrderValue,     // Computed Pending Order Value
+		reservedQtyStockValue, // Computed Reserved Qty Stock Value
 		data.MonthOfDeliveryScheduled,
 		data.Category,
 	)
@@ -201,6 +241,7 @@ func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 	log.Println("Customer PO data submitted successfully.")
 	return nil
 }
+
 func (q *Query) FetchCustomerPoData() ([]models.CustomerPo, error) {
 	var customerPoList []models.CustomerPo
 
@@ -241,7 +282,7 @@ func (q *Query) FetchCustomerPoData() ([]models.CustomerPo, error) {
 			&customerPo.ConcernsOnOrder,
 			&customerPo.BillableSchValue,
 			&customerPo.DeliSchAsPerCustomerPo,
-			&customerPo.CustomerClearenceForBillingg,
+			&customerPo.CustomerClearanceForBilling,
 			&customerPo.ReservedQtyFromStock,
 			&customerPo.RequiredQtyToOrder,
 			&customerPo.PendingQtyAgainstPO,
