@@ -13,13 +13,15 @@ func registerRouter(db *sql.DB) *mux.Router {
 	router := mux.NewRouter()
 	router.Use(middlewares.CorsMiddleware)
 
-	CustomerPoDropDown := handlers.NewCustomerPoController(repository.NewCustomerPoRepository(db))
-	router.HandleFunc("/dropdown", CustomerPoDropDown.FetchDropDown).Methods("GET")
-	router.HandleFunc("/submit", CustomerPoDropDown.SubmitFormCustomerPoData).Methods("POST")
-	router.HandleFunc("/fetch", CustomerPoDropDown.FetchCustomerPoData).Methods("GET")
-	router.HandleFunc("/update", CustomerPoDropDown.UpdateCustomerPoData).Methods("PUT")
+	customerPoRepo := repository.NewCustomerPoRepository(db)
+	customerPoHandler := handlers.NewCustomerPoHandler(customerPoRepo)
+	router.HandleFunc("/dropdown", customerPoHandler.FetchDropDown).Methods("GET")
+	router.HandleFunc("/submit", customerPoHandler.SubmitFormCustomerPoData).Methods("POST")
+	router.HandleFunc("/fetch", customerPoHandler.FetchCustomerPoData).Methods("GET")
+	router.HandleFunc("/update", customerPoHandler.UpdateCustomerPoData).Methods("PUT")
+	router.HandleFunc("/delete/{id}", customerPoHandler.DeleteCustomerPoHandler).Methods("POST")
 
-	ExcelDownloadCustomerPoHandler := handlers.NewExcelDownloadCustomerPoHandler(repository.NewCustomerPoRepository(db))
-	router.HandleFunc("/download", ExcelDownloadCustomerPoHandler.DownloadCustomerPo).Methods("GET")
+	excelDownloadCustomerPoHandler := handlers.NewExcelDownloadCustomerPoHandler(customerPoRepo)
+	router.HandleFunc("/download", excelDownloadCustomerPoHandler.DownloadCustomerPo).Methods("GET")
 	return router
 }

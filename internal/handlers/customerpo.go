@@ -1,23 +1,26 @@
 package handlers
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/Srujankm12/CustomerPoBackend/internal/models"
 	"github.com/Srujankm12/CustomerPoBackend/pkg/utils"
+	"github.com/Srujankm12/CustomerPoBackend/repository"
+	"github.com/gorilla/mux"
 )
 
 type CustomerPoHandler struct {
-	customerRepo models.CustomerPoInterface
+	customerRepo *repository.CustomerPoRepository
 }
 
-func NewCustomerPoController(customerRepo models.CustomerPoInterface) *CustomerPoHandler {
+func NewCustomerPoHandler(customerRepo models.CustomerPoInterface) *CustomerPoHandler {
 	return &CustomerPoHandler{
-		customerRepo: customerRepo,
+		customerRepo: customerRepo.(*repository.CustomerPoRepository),
 	}
 }
-
 func (c *CustomerPoHandler) FetchDropDown(w http.ResponseWriter, r *http.Request) {
 	customerList, err := c.customerRepo.FetchDropDown()
 	if err != nil {
@@ -94,4 +97,30 @@ func (c *CustomerPoHandler) UpdateCustomerPoData(w http.ResponseWriter, r *http.
 	}
 	w.WriteHeader(http.StatusOK)
 	utils.Encode(w, map[string]string{"message": "Data updated successfully"})
+}
+
+func (c *CustomerPoHandler) DeleteCustomerPoHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr, ok := vars["id"]
+	if !ok {
+		http.Error(w, "ID parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+
+	err = c.customerRepo.DeleteCustomerPo(id)
+	if err != nil {
+		log.Printf("Error deleting record: %v", err)
+		http.Error(w, "Failed to delete record", http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]string{"message": "Record deleted successfully"}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
