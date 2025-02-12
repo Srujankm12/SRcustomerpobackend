@@ -70,7 +70,6 @@ func (c *CustomerPoRepository) DeleteCustomerPo(id int) error {
 		return err
 	}
 
-	// Ensure rollback happens if there's an error
 	defer func() {
 		if err != nil {
 			tx.Rollback()
@@ -79,7 +78,6 @@ func (c *CustomerPoRepository) DeleteCustomerPo(id int) error {
 		}
 	}()
 
-	// Delete record based on the given ID
 	_, err = tx.Exec("DELETE FROM customerposubmitteddata WHERE id = $1", id)
 	if err != nil {
 		log.Printf("Failed to delete record with id %d: %v", id, err)

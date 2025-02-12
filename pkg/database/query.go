@@ -129,20 +129,18 @@ func (q *Query) FetchDropDown() ([]models.CustomerPoDropDown, error) {
 }
 
 func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
-	// Convert customer clearance to an integer
 	customerClearance, err := strconv.Atoi(data.CustomerClearanceForBilling)
 	if err != nil {
 		log.Printf("Invalid customer_clearence_for_billing value: %v", err)
 		return err
 	}
 
-	// Initialize computed values
 	var billableSchValue, pendingValueAgainstPO, pendingOrderValue, reservedQtyStockValue float64
 	var requiredQtyToOrder, pendingQtyAgainstPO, materialDueQty int
 	var poStatus string
 
 	if data.Quantity > 0 {
-		unitPrice := float64(data.TotalValue) / float64(data.Quantity) // Calculate unit price safely
+		unitPrice := float64(data.TotalValue) / float64(data.Quantity)
 		billableSchValue = unitPrice * float64(customerClearance)
 		requiredQtyToOrder = data.Quantity - customerClearance - data.ReservedQtyFromStock
 		pendingQtyAgainstPO = data.Quantity - customerClearance
@@ -157,7 +155,7 @@ func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 			poStatus = "Pending"
 		}
 	} else {
-		// Handle zero quantity case safely
+
 		billableSchValue = 0
 		requiredQtyToOrder = 0
 		pendingQtyAgainstPO = 0
@@ -168,7 +166,6 @@ func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 		poStatus = "Pending"
 	}
 
-	// Insert into the database
 	_, err = q.db.Exec(`
 		INSERT INTO customerposubmitteddata (
 			timestamp,
@@ -211,21 +208,21 @@ func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 		data.Quantity,
 		data.Unit,
 		data.TotalValue,
-		data.POStatusDD, // Computed PO Status
+		data.POStatusDD,
 		data.ConcernsOnOrder,
-		billableSchValue, // Computed Billable Sch Value
+		billableSchValue,
 		data.DeliSchAsPerCustomerPo,
-		customerClearance, // Converted clearance
+		customerClearance,
 		data.ReservedQtyFromStock,
-		requiredQtyToOrder,  // Computed Required Qty to Order
-		pendingQtyAgainstPO, // Computed Pending Qty Against PO
-		materialDueQty,      // Computed Material Due Qty
+		requiredQtyToOrder,
+		pendingQtyAgainstPO,
+		materialDueQty,
 		data.SONumber,
 		data.MEIPONO,
 		poStatus,
-		pendingValueAgainstPO, // Computed Pending Value Against PO
-		pendingOrderValue,     // Computed Pending Order Value
-		reservedQtyStockValue, // Computed Reserved Qty Stock Value
+		pendingValueAgainstPO,
+		pendingOrderValue,
+		reservedQtyStockValue,
 		data.MonthOfDeliveryScheduled,
 		data.Category,
 	)
@@ -246,13 +243,12 @@ func (q *Query) UpdateCustomerPoData(data models.CustomerPo) error {
 		return err
 	}
 
-	// Initialize computed values
 	var billableSchValue, pendingValueAgainstPO, pendingOrderValue, reservedQtyStockValue float64
 	var requiredQtyToOrder, pendingQtyAgainstPO, materialDueQty int
 	var poStatus string
 
 	if data.Quantity > 0 {
-		unitPrice := float64(data.TotalValue) / float64(data.Quantity) // Calculate unit price safely
+		unitPrice := float64(data.TotalValue) / float64(data.Quantity)
 		billableSchValue = unitPrice * float64(customerClearance)
 		requiredQtyToOrder = data.Quantity - customerClearance - data.ReservedQtyFromStock
 		pendingQtyAgainstPO = data.Quantity - customerClearance
@@ -267,7 +263,7 @@ func (q *Query) UpdateCustomerPoData(data models.CustomerPo) error {
 			poStatus = "Pending"
 		}
 	} else {
-		// Handle zero quantity case safely
+
 		billableSchValue = 0
 		requiredQtyToOrder = 0
 		pendingQtyAgainstPO = 0
@@ -308,7 +304,7 @@ func (q *Query) UpdateCustomerPoData(data models.CustomerPo) error {
 			reserved_qty_stock_value = $26,
 			month_of_delivery_scheduled = $27,
 			category = $28
-		WHERE id = $29`, // Ensure update is based on ID
+		WHERE id = $29`,
 		data.Timestamp,
 		data.SRAEngineerName,
 		data.Supplier,
@@ -320,24 +316,24 @@ func (q *Query) UpdateCustomerPoData(data models.CustomerPo) error {
 		data.Quantity,
 		data.Unit,
 		data.TotalValue,
-		poStatus, // Computed PO Status
+		poStatus,
 		data.ConcernsOnOrder,
-		billableSchValue, // Computed Billable Sch Value
+		billableSchValue,
 		data.DeliSchAsPerCustomerPo,
-		customerClearance, // Converted clearance
+		customerClearance,
 		data.ReservedQtyFromStock,
-		requiredQtyToOrder,  // Computed Required Qty to Order
-		pendingQtyAgainstPO, // Computed Pending Qty Against PO
-		materialDueQty,      // Computed Material Due Qty
+		requiredQtyToOrder,
+		pendingQtyAgainstPO,
+		materialDueQty,
 		data.SONumber,
 		data.MEIPONO,
 		data.POStatusF,
-		pendingValueAgainstPO, // Computed Pending Value Against PO
-		pendingOrderValue,     // Computed Pending Order Value
-		reservedQtyStockValue, // Computed Reserved Qty Stock Value
+		pendingValueAgainstPO,
+		pendingOrderValue,
+		reservedQtyStockValue,
 		data.MonthOfDeliveryScheduled,
 		data.Category,
-		data.ID, // The ID to update
+		data.ID,
 	)
 
 	if err != nil {
@@ -432,7 +428,6 @@ func (q *Query) DeleteCustomerPo(id int) error {
 		return err
 	}
 
-	// Ensure rollback happens if there's an error
 	defer func() {
 		if err != nil {
 			tx.Rollback()
@@ -441,7 +436,6 @@ func (q *Query) DeleteCustomerPo(id int) error {
 		}
 	}()
 
-	// Delete record based on the given ID
 	_, err = tx.Exec("DELETE FROM customerposubmitteddata WHERE id = $1", id)
 	if err != nil {
 		log.Printf("Failed to delete record with id %d: %v", id, err)
