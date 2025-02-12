@@ -19,5 +19,7 @@ func registerRouter(db *sql.DB) *mux.Router {
 	router.HandleFunc("/fetch", CustomerPoDropDown.FetchCustomerPoData).Methods("GET")
 	router.HandleFunc("/update", CustomerPoDropDown.UpdateCustomerPoData).Methods("PUT")
 
+	ExcelDownloadCustomerPoHandler := handlers.NewExcelDownloadCustomerPoHandler(repository.NewCustomerPoRepository(db))
+	router.HandleFunc("/download", ExcelDownloadCustomerPoHandler.DownloadCustomerPo).Methods("GET")
 	return router
 }
