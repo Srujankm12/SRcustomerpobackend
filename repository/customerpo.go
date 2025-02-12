@@ -20,7 +20,7 @@ func NewCustomerPoRepository(db *sql.DB) *CustomerPoRepository {
 }
 func (c *CustomerPoRepository) FetchDropDown() ([]models.CustomerPoDropDown, error) {
 	query := database.NewQuery(c.db)
-	res, err := query.FetchDropDown(100, 0)
+	res, err := query.FetchDropDown()
 	if err != nil {
 		log.Printf("Database query failed: %v", err)
 		return nil, err

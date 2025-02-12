@@ -97,40 +97,37 @@ func (q *Query) CreateTables() error {
 	return nil
 }
 
-func (q *Query) FetchDropDown(limit, offset int) ([]models.CustomerPoDropDown, error) {
-	var customerList []models.CustomerPoDropDown
+func (q *Query) FetchDropDown() ([]models.CustomerPoDropDown, error) {
+	var dropdowns []models.CustomerPoDropDown
 
-	query := `SELECT c.customer_name, b.bs_number, u.unit_name, s.status, o.concern
-			  FROM customername c
-			  JOIN bsno b ON TRUE
-			  JOIN unit u ON TRUE
-			  JOIN postatusdd s ON TRUE
-			  JOIN concernsonorder o ON TRUE
-			  LIMIT $1 OFFSET $2;`
-
-	rows, err := q.db.Query(query, limit, offset)
+	rows, err := q.db.Query(`
+		SELECT c.customer_name, b.bs_number, u.unit_name, s.status, o.concern
+		FROM customername c
+		CROSS JOIN bsno b
+		CROSS JOIN unit u
+		CROSS JOIN postatusdd s
+		CROSS JOIN concernsonorder o;
+	`)
 	if err != nil {
-		log.Printf("Database query failed: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var customer models.CustomerPoDropDown
-		if err := rows.Scan(&customer.CustomerName, &customer.BSNO, &customer.Unit, &customer.POStatusDD, &customer.ConcernsOnOrder); err != nil {
-			log.Printf("Row scan failed: %v", err)
+		var dropdown models.CustomerPoDropDown
+		if err := rows.Scan(&dropdown.CustomerName, &dropdown.BSNO, &dropdown.Unit, &dropdown.POStatusDD, &dropdown.ConcernsOnOrder); err != nil {
 			return nil, err
 		}
-		customerList = append(customerList, customer)
+		dropdowns = append(dropdowns, dropdown)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	log.Printf("Fetched %d dropdown records", len(customerList))
-	return customerList, nil
+	return dropdowns, nil
 }
+
 func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 	// Convert customer clearance to an integer
 	customerClearance, err := strconv.Atoi(data.CustomerClearanceForBilling)
