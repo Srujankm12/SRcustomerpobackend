@@ -211,7 +211,7 @@ func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 		data.Quantity,
 		data.Unit,
 		data.TotalValue,
-		poStatus, // Computed PO Status
+		data.POStatusDD, // Computed PO Status
 		data.ConcernsOnOrder,
 		billableSchValue, // Computed Billable Sch Value
 		data.DeliSchAsPerCustomerPo,
@@ -222,7 +222,7 @@ func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 		materialDueQty,      // Computed Material Due Qty
 		data.SONumber,
 		data.MEIPONO,
-		data.POStatusF,
+		poStatus,
 		pendingValueAgainstPO, // Computed Pending Value Against PO
 		pendingOrderValue,     // Computed Pending Order Value
 		reservedQtyStockValue, // Computed Reserved Qty Stock Value

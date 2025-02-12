@@ -29,7 +29,7 @@ func (edc *ExcelDownloadCustomerPoHandler) DownloadCustomerPo(w http.ResponseWri
 	file.NewSheet(sheetName)
 
 	headers := []string{
-		"ID", "Timestamp", "SRA Engineer Name", "Supplier", "Customer Name", "BS Number",
+		"ID", "SRA Engineer Name", "Supplier", "Customer Name", "BS Number",
 		"Customer PO No", "PO Date", "Part Code", "Quantity", "Unit", "Total Value",
 		"PO Status DD", "Concerns on Order", "Billable Sch Value", "Deli Sch as per Customer PO",
 		"Customer Clearence for Billing", "Reserved Qty from Stock", "Required Qty to Order",
@@ -37,42 +37,43 @@ func (edc *ExcelDownloadCustomerPoHandler) DownloadCustomerPo(w http.ResponseWri
 		"Pending Value against PO", "Pending Order Value", "Reserved Qty Stock Value",
 		"Month of Delivery Scheduled", "Category",
 	}
-	for colIndex, record := range headers {
-		cell := fmt.Sprintf("%s%d", string(65+colIndex))
-		file.SetCellValue(sheetName, cell, record)
+	for colIndex, header := range headers {
+		cell, _ := excelize.CoordinatesToCellName(colIndex+1, 1)
+		file.SetCellValue(sheetName, cell, header)
 	}
+	file.DeleteSheet("Sheet1")
 
 	for i, record := range data {
 		rowNum := i + 2
 		file.SetCellValue(sheetName, fmt.Sprintf("A%d", rowNum), record.ID)
-		file.SetCellValue(sheetName, fmt.Sprintf("B%d", rowNum), record.Timestamp)
-		file.SetCellValue(sheetName, fmt.Sprintf("C%d", rowNum), record.SRAEngineerName)
-		file.SetCellValue(sheetName, fmt.Sprintf("D%d", rowNum), record.Supplier)
-		file.SetCellValue(sheetName, fmt.Sprintf("E%d", rowNum), record.CustomerName)
-		file.SetCellValue(sheetName, fmt.Sprintf("F%d", rowNum), record.BSNO)
-		file.SetCellValue(sheetName, fmt.Sprintf("G%d", rowNum), record.CustomerPoNo)
-		file.SetCellValue(sheetName, fmt.Sprintf("H%d", rowNum), record.PODate)
-		file.SetCellValue(sheetName, fmt.Sprintf("I%d", rowNum), record.PartCode)
-		file.SetCellValue(sheetName, fmt.Sprintf("J%d", rowNum), record.Quantity)
-		file.SetCellValue(sheetName, fmt.Sprintf("K%d", rowNum), record.Unit)
-		file.SetCellValue(sheetName, fmt.Sprintf("L%d", rowNum), record.TotalValue)
-		file.SetCellValue(sheetName, fmt.Sprintf("M%d", rowNum), record.POStatusDD)
-		file.SetCellValue(sheetName, fmt.Sprintf("N%d", rowNum), record.ConcernsOnOrder)
-		file.SetCellValue(sheetName, fmt.Sprintf("O%d", rowNum), record.BillableSchValue)
-		file.SetCellValue(sheetName, fmt.Sprintf("P%d", rowNum), record.DeliSchAsPerCustomerPo)
-		file.SetCellValue(sheetName, fmt.Sprintf("Q%d", rowNum), record.CustomerClearanceForBilling)
-		file.SetCellValue(sheetName, fmt.Sprintf("R%d", rowNum), record.ReservedQtyFromStock)
-		file.SetCellValue(sheetName, fmt.Sprintf("S%d", rowNum), record.RequiredQtyToOrder)
-		file.SetCellValue(sheetName, fmt.Sprintf("T%d", rowNum), record.PendingQtyAgainstPO)
-		file.SetCellValue(sheetName, fmt.Sprintf("U%d", rowNum), record.MaterialDueQty)
-		file.SetCellValue(sheetName, fmt.Sprintf("V%d", rowNum), record.SONumber)
-		file.SetCellValue(sheetName, fmt.Sprintf("W%d", rowNum), record.MEIPONO)
-		file.SetCellValue(sheetName, fmt.Sprintf("X%d", rowNum), record.POStatusF)
-		file.SetCellValue(sheetName, fmt.Sprintf("Y%d", rowNum), record.PendingValueAgainstPO)
-		file.SetCellValue(sheetName, fmt.Sprintf("Z%d", rowNum), record.PendingOrderValue)
-		file.SetCellValue(sheetName, fmt.Sprintf("AA%d", rowNum), record.ReservedQtyStockValue)
-		file.SetCellValue(sheetName, fmt.Sprintf("AB%d", rowNum), record.MonthOfDeliveryScheduled)
-		file.SetCellValue(sheetName, fmt.Sprintf("AC%d", rowNum), record.Category)
+
+		file.SetCellValue(sheetName, fmt.Sprintf("B%d", rowNum), record.SRAEngineerName)
+		file.SetCellValue(sheetName, fmt.Sprintf("C%d", rowNum), record.Supplier)
+		file.SetCellValue(sheetName, fmt.Sprintf("D%d", rowNum), record.CustomerName)
+		file.SetCellValue(sheetName, fmt.Sprintf("E%d", rowNum), record.BSNO)
+		file.SetCellValue(sheetName, fmt.Sprintf("F%d", rowNum), record.CustomerPoNo)
+		file.SetCellValue(sheetName, fmt.Sprintf("G%d", rowNum), record.PODate)
+		file.SetCellValue(sheetName, fmt.Sprintf("H%d", rowNum), record.PartCode)
+		file.SetCellValue(sheetName, fmt.Sprintf("I%d", rowNum), record.Quantity)
+		file.SetCellValue(sheetName, fmt.Sprintf("J%d", rowNum), record.Unit)
+		file.SetCellValue(sheetName, fmt.Sprintf("K%d", rowNum), record.TotalValue)
+		file.SetCellValue(sheetName, fmt.Sprintf("L%d", rowNum), record.POStatusDD)
+		file.SetCellValue(sheetName, fmt.Sprintf("M%d", rowNum), record.ConcernsOnOrder)
+		file.SetCellValue(sheetName, fmt.Sprintf("N%d", rowNum), record.BillableSchValue)
+		file.SetCellValue(sheetName, fmt.Sprintf("O%d", rowNum), record.DeliSchAsPerCustomerPo)
+		file.SetCellValue(sheetName, fmt.Sprintf("P%d", rowNum), record.CustomerClearanceForBilling)
+		file.SetCellValue(sheetName, fmt.Sprintf("Q%d", rowNum), record.ReservedQtyFromStock)
+		file.SetCellValue(sheetName, fmt.Sprintf("R%d", rowNum), record.RequiredQtyToOrder)
+		file.SetCellValue(sheetName, fmt.Sprintf("S%d", rowNum), record.PendingQtyAgainstPO)
+		file.SetCellValue(sheetName, fmt.Sprintf("T%d", rowNum), record.MaterialDueQty)
+		file.SetCellValue(sheetName, fmt.Sprintf("U%d", rowNum), record.SONumber)
+		file.SetCellValue(sheetName, fmt.Sprintf("V%d", rowNum), record.MEIPONO)
+		file.SetCellValue(sheetName, fmt.Sprintf("W%d", rowNum), record.POStatusF)
+		file.SetCellValue(sheetName, fmt.Sprintf("X%d", rowNum), record.PendingValueAgainstPO)
+		file.SetCellValue(sheetName, fmt.Sprintf("Y%d", rowNum), record.PendingOrderValue)
+		file.SetCellValue(sheetName, fmt.Sprintf("Z%d", rowNum), record.ReservedQtyStockValue)
+		file.SetCellValue(sheetName, fmt.Sprintf("AA%d", rowNum), record.MonthOfDeliveryScheduled)
+		file.SetCellValue(sheetName, fmt.Sprintf("AB%d", rowNum), record.Category)
 
 	}
 	tempDir := "/tmp"
