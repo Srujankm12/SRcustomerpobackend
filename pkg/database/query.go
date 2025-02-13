@@ -73,7 +73,7 @@ func (q *Query) CreateTables() error {
 			material_due_qty INT,
 			so_number VARCHAR(100),
 			mei_po_no VARCHAR(100),
-			po_status_f VARCHAR(100),
+			po_status_final VARCHAR(100),
 			pending_value_against_po FLOAT, 
 			pending_order_value FLOAT,
 			reserved_qty_stock_value FLOAT,
@@ -137,7 +137,7 @@ func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 
 	var billableSchValue, pendingValueAgainstPO, pendingOrderValue, reservedQtyStockValue float64
 	var requiredQtyToOrder, pendingQtyAgainstPO, materialDueQty int
-	var poStatus string
+	var POStatusF string
 
 	if data.Quantity > 0 {
 		unitPrice := float64(data.TotalValue) / float64(data.Quantity)
@@ -150,9 +150,9 @@ func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 		reservedQtyStockValue = unitPrice * float64(data.ReservedQtyFromStock)
 
 		if pendingQtyAgainstPO == 0 {
-			poStatus = "Completed"
+			POStatusF = "Completed"
 		} else {
-			poStatus = "Pending"
+			POStatusF = "Pending"
 		}
 	} else {
 
@@ -163,7 +163,7 @@ func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 		pendingValueAgainstPO = 0
 		pendingOrderValue = 0
 		reservedQtyStockValue = 0
-		poStatus = "Pending"
+		POStatusF = "Pending"
 	}
 
 	_, err = q.db.Exec(`
@@ -190,7 +190,7 @@ func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 			material_due_qty,
 			so_number,
 			mei_po_no,
-			po_status_f,
+			po_status_final,
 			pending_value_against_po,
 			pending_order_value,
 			reserved_qty_stock_value,
@@ -219,7 +219,7 @@ func (q *Query) SubmitFormCustomerPoData(data models.CustomerPo) error {
 		materialDueQty,
 		data.SONumber,
 		data.MEIPONO,
-		poStatus,
+		POStatusF,
 		pendingValueAgainstPO,
 		pendingOrderValue,
 		reservedQtyStockValue,
@@ -245,7 +245,7 @@ func (q *Query) UpdateCustomerPoData(data models.CustomerPo) error {
 
 	var billableSchValue, pendingValueAgainstPO, pendingOrderValue, reservedQtyStockValue float64
 	var requiredQtyToOrder, pendingQtyAgainstPO, materialDueQty int
-	var poStatus string
+	var POStatusF string
 
 	if data.Quantity > 0 {
 		unitPrice := float64(data.TotalValue) / float64(data.Quantity)
@@ -258,9 +258,9 @@ func (q *Query) UpdateCustomerPoData(data models.CustomerPo) error {
 		reservedQtyStockValue = unitPrice * float64(data.ReservedQtyFromStock)
 
 		if pendingQtyAgainstPO == 0 {
-			poStatus = "Completed"
+			POStatusF = "Completed"
 		} else {
-			poStatus = "Pending"
+			POStatusF = "Pending"
 		}
 	} else {
 
@@ -271,7 +271,7 @@ func (q *Query) UpdateCustomerPoData(data models.CustomerPo) error {
 		pendingValueAgainstPO = 0
 		pendingOrderValue = 0
 		reservedQtyStockValue = 0
-		poStatus = "Pending"
+		POStatusF = "Pending"
 	}
 
 	_, err = q.db.Exec(`
@@ -298,7 +298,7 @@ func (q *Query) UpdateCustomerPoData(data models.CustomerPo) error {
 			material_due_qty = $20,
 			so_number = $21,
 			mei_po_no = $22,
-			po_status_f = $23,
+			po_status_final = $23,
 			pending_value_against_po = $24,
 			pending_order_value = $25,
 			reserved_qty_stock_value = $26,
@@ -316,7 +316,7 @@ func (q *Query) UpdateCustomerPoData(data models.CustomerPo) error {
 		data.Quantity,
 		data.Unit,
 		data.TotalValue,
-		poStatus,
+		data.POStatusDD,
 		data.ConcernsOnOrder,
 		billableSchValue,
 		data.DeliSchAsPerCustomerPo,
@@ -327,7 +327,7 @@ func (q *Query) UpdateCustomerPoData(data models.CustomerPo) error {
 		materialDueQty,
 		data.SONumber,
 		data.MEIPONO,
-		data.POStatusF,
+		POStatusF,
 		pendingValueAgainstPO,
 		pendingOrderValue,
 		reservedQtyStockValue,
@@ -354,7 +354,7 @@ func (q *Query) FetchCustomerPoData() ([]models.CustomerPo, error) {
 		       po_status_dd, concerns_on_order, billable_sch_value, 
 		       deli_sch_as_per_customer_po, customer_clearence_for_billing, 
 		       reserved_qty_from_stock, required_qty_to_order, pending_qty_against_po, 
-		       material_due_qty, so_number, mei_po_no, po_status_f, 
+		       material_due_qty, so_number, mei_po_no, po_status_final, 
 		       pending_value_against_po, pending_order_value, reserved_qty_stock_value, 
 		       month_of_delivery_scheduled, category
 		FROM customerposubmitteddata;

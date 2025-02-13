@@ -14,7 +14,7 @@ type CustomerPo struct {
 	PartCode                    string  `json:"part_code"`
 	Quantity                    int     `json:"quantity"`
 	Unit                        string  `json:"unit"`
-	TotalValue                  float64 `json:"total_value"` // Could be a decimal amount
+	TotalValue                  float64 `json:"total_value"`
 	POStatusDD                  string  `json:"po_status_dd"`
 	ConcernsOnOrder             string  `json:"concerns_on_order"`
 	BillableSchValue            float64 `json:"billable_scheduled_value"`

@@ -63,7 +63,6 @@ func (e *ExcelDownloadCPO) CreateExcelDownloadCPO() (*excelize.File, error) {
 
 	headers := []string{
 		"ID",
-
 		"SRA Engineer Name",
 		"Supplier",
 		"Customer Name",

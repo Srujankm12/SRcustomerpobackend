@@ -46,7 +46,6 @@ func (edc *ExcelDownloadCustomerPoHandler) DownloadCustomerPo(w http.ResponseWri
 	for i, record := range data {
 		rowNum := i + 2
 		file.SetCellValue(sheetName, fmt.Sprintf("A%d", rowNum), record.ID)
-
 		file.SetCellValue(sheetName, fmt.Sprintf("B%d", rowNum), record.SRAEngineerName)
 		file.SetCellValue(sheetName, fmt.Sprintf("C%d", rowNum), record.Supplier)
 		file.SetCellValue(sheetName, fmt.Sprintf("D%d", rowNum), record.CustomerName)
