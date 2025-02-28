@@ -79,8 +79,19 @@ func (q *Query) CreateTables() error {
 			reserved_qty_stock_value FLOAT,
 			month_of_delivery_scheduled VARCHAR(50),
 			category VARCHAR(100)
-);
-`,
+			)`,
+		`CREATE TABLE IF NOT EXISTS bengineername(
+			b_engineer_name VARCHAR(255) NOT NULL UNIQUE
+			) `,
+		`CREATE TABLE IF NOT EXISTS bsupplier (
+				b_supplier_name VARCHAR(255) NOT NULL UNIQUE
+			)`,
+		`CREATE TABLE IF NOT EXISTS bcustomer(
+			b_customer_name VARCHAR(255) NOT NULL UNIQUE
+		)`,
+		`CREATE TABLE IF NOT EXISTS bunit(
+			b_unit VARCHAR(100) NOT NULL UNIQUE
+		)`,
 	}
 
 	for _, query := range queries {
@@ -444,3 +455,11 @@ func (q *Query) DeleteCustomerPo(id int) error {
 
 	return nil
 }
+
+//billing sheet
+
+// func (q *Query) FetchBillingSheetDropDown() ([]models.BillingSheetDropDown, error) {
+// 	var billingSheetDropDown []models.BillingSheetDropDown
+// 	rows, err := q.db.Query(`SELECT e.b_engineer_name,b.b_supplier_name,a.b_customer_name,u.b_unit
+// 	FROM b_engineer e
+// }
